@@ -18,12 +18,11 @@ const Index = () => {
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 py-12">
         <div className="flex flex-col items-center gap-8">
           {/* Hero Image */}
-          <div className="relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-primary via-secondary to-accent rounded-3xl blur-xl opacity-50 group-hover:opacity-75 transition duration-1000 animate-glow-pulse" />
+          <div className="relative">
             <img
               src={bwoHero}
               alt="BWO Main Hero"
-              className="relative rounded-3xl w-full max-w-3xl animate-float glass-panel"
+              className="w-full max-w-3xl animate-float"
             />
           </div>
 
