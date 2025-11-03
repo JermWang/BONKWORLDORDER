@@ -86,11 +86,11 @@ export default {
         "glow-pulse": {
           "0%, 100%": { 
             opacity: "1",
-            boxShadow: "0 0 20px hsl(var(--glow-cyan) / 0.3)"
+            boxShadow: "0 0 20px hsl(120 100% 50% / 0.4)"
           },
           "50%": { 
-            opacity: "0.8",
-            boxShadow: "0 0 40px hsl(var(--glow-cyan) / 0.6)"
+            opacity: "0.9",
+            boxShadow: "0 0 40px hsl(120 100% 50% / 0.8)"
           },
         },
         "particle-float": {

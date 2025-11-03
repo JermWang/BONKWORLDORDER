@@ -39,7 +39,7 @@ export const ParticleBackground = () => {
 
       particles.forEach((particle) => {
         // Draw particle
-        ctx.fillStyle = `rgba(0, 255, 255, ${particle.opacity})`;
+        ctx.fillStyle = `rgba(0, 255, 0, ${particle.opacity})`;
         ctx.beginPath();
         ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
         ctx.fill();
