@@ -1,7 +1,7 @@
 import { ParticleBackground } from "@/components/ParticleBackground";
 import { CopyContractButton } from "@/components/CopyContractButton";
 import { PFPGenerator } from "@/components/PFPGenerator";
-import heroMatrix from "@/assets/hero-matrix.jpg";
+import bwoHero from "@/assets/bwo-hero.gif";
 
 const Index = () => {
   return (
@@ -17,8 +17,8 @@ const Index = () => {
             <div className="relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-primary via-secondary to-accent rounded-3xl blur-xl opacity-50 group-hover:opacity-75 transition duration-1000 animate-glow-pulse" />
               <img
-                src={heroMatrix}
-                alt="Digital Matrix Hero"
+                src={bwoHero}
+                alt="BWO Main Hero"
                 className="relative rounded-3xl w-full max-w-2xl animate-float glass-panel"
               />
             </div>
