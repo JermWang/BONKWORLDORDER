@@ -38,11 +38,16 @@ export const ParticleBackground = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       particles.forEach((particle) => {
-        // Draw particle
-        ctx.fillStyle = `rgba(0, 255, 0, ${particle.opacity})`;
+        // Draw glowing particle
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.shadowBlur = 30;
+        ctx.shadowColor = 'rgba(0, 255, 120, 0.6)';
+        ctx.fillStyle = `rgba(0, 255, 120, ${particle.opacity})`;
         ctx.beginPath();
         ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
         ctx.fill();
+        ctx.restore();
 
         // Update position
         particle.y += particle.speedY;
@@ -75,8 +80,8 @@ export const ParticleBackground = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none"
-      style={{ zIndex: 50 }}
+      className="fixed inset-0 pointer-events-none z-[8000]"
+      style={{ zIndex: 8000, mixBlendMode: 'screen' }}
     />
   );
 };

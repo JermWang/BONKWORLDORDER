@@ -10,19 +10,21 @@ const Index = () => {
   const [showPFPGenerator, setShowPFPGenerator] = useState(false);
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden">
-      {/* Particle Background */}
+    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden" style={{ backgroundColor: 'rgb(0, 0, 0)' }}>
       <ParticleBackground />
 
       {/* Main Content */}
       <div className="relative z-10 w-full max-w-7xl mx-auto px-6 py-12">
         <div className="flex flex-col items-center gap-8">
           {/* Hero Image */}
-          <div className="relative">
+          <div className="relative no-glow">
+            {/* Blackout layer to eliminate any background glow under the GIF */}
+            <div className="absolute -inset-24 bg-black pointer-events-none z-0" aria-hidden />
             <img
               src={bwoHero}
               alt="BWO Main Hero"
-              className="w-full max-w-3xl animate-float"
+              className="relative z-10 w-full max-w-3xl no-glow"
+              style={{ imageRendering: 'auto' }}
             />
           </div>
 
@@ -46,7 +48,7 @@ const Index = () => {
                   onClick={() => setShowPFPGenerator(false)}
                   variant="ghost"
                   size="icon"
-                  className="absolute -top-2 -right-2 z-20 glass-panel glow-border rounded-full hover:bg-destructive/20"
+                  className="absolute -top-2 -right-2 z-20 glass-panel rounded-full hover:bg-destructive/20"
                 >
                   <X className="h-5 w-5" />
                 </Button>
@@ -64,9 +66,7 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Ambient Glow Effects */}
-      <div className="fixed top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl opacity-30 pointer-events-none" />
-      <div className="fixed bottom-1/4 right-1/4 w-96 h-96 bg-secondary/10 rounded-full blur-3xl opacity-30 pointer-events-none" />
+      {/* Ambient Glow Effects removed */}
     </div>
   );
 };
