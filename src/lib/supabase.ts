@@ -68,9 +68,17 @@ export async function logStrike(): Promise<number | null> {
             throw error;
         }
         console.log('[logStrike] Insert success:', data);
+        // Small delay to let trigger complete
+        await new Promise(resolve => setTimeout(resolve, 100));
         // Read latest count after trigger fires
-        const count = await getGlobalStrikes();
-        console.log('[logStrike] New global count:', count);
+        let count = await getGlobalStrikes();
+        console.log('[logStrike] New global count after insert:', count);
+        // If still 0, try RPC as backup
+        if (count === 0) {
+            console.log('[logStrike] Count still 0, trying RPC fallback');
+            count = await incrementGlobalStrikes() ?? 0;
+            console.log('[logStrike] RPC result:', count);
+        }
         return count;
     } catch (err) {
         console.error('[logStrike] Fallback to RPC due to error:', err);
