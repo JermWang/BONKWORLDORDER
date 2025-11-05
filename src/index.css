@@ -226,6 +226,23 @@ All colors MUST be HSL.
   animation: noise-shift 1s steps(2) infinite;
 }
 
+/* Satellite feed glitch effect */
+.satellite-glitch {
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0 2px,
+    rgba(16,185,129,0.03) 2px 3px
+  );
+  animation: glitch-scan 8s linear infinite;
+  mix-blend-mode: screen;
+}
+
+@keyframes glitch-scan {
+  0%, 100% { transform: translateY(0); opacity: 0.6; }
+  50% { transform: translateY(-100vh); opacity: 0.8; }
+}
+
 @keyframes noise-shift {
   0% { background-position: 0 0, 0 0; }
   100% { background-position: -100% 100%, 100% -100%; }

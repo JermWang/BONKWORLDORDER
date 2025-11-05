@@ -53,6 +53,7 @@ export async function incrementGlobalStrikes(): Promise<number | null> {
 // Preferred path: insert into nuke_launches to trigger increment via DB trigger
 export async function logStrike(): Promise<number | null> {
     if (!isSupabaseConfigured()) {
+        console.log('[logStrike] Supabase not configured, using fallback');
         return incrementGlobalStrikes();
     }
     try {
@@ -60,11 +61,19 @@ export async function logStrike(): Promise<number | null> {
             session_id: (crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)),
             user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
         };
-        const { error } = await supabase.from("nuke_launches").insert(payload);
-        if (error) throw error;
-        // Read latest count
-        return await getGlobalStrikes();
-    } catch {
+        console.log('[logStrike] Inserting into nuke_launches:', payload);
+        const { data, error } = await supabase.from("nuke_launches").insert(payload).select();
+        if (error) {
+            console.error('[logStrike] Insert error:', error);
+            throw error;
+        }
+        console.log('[logStrike] Insert success:', data);
+        // Read latest count after trigger fires
+        const count = await getGlobalStrikes();
+        console.log('[logStrike] New global count:', count);
+        return count;
+    } catch (err) {
+        console.error('[logStrike] Fallback to RPC due to error:', err);
         // Fallback to RPC if insert path fails
         return await incrementGlobalStrikes();
     }

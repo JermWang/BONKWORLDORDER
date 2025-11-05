@@ -98,6 +98,8 @@ export const SatelliteMapBackground = () => {
       }} />
       {/* Dotted digital grain */}
       <div className="absolute inset-0 overlay-holo-dots" />
+      {/* Glitch overlay on satellite feed */}
+      <div className="absolute inset-0 satellite-glitch" />
     </div>
   );
 };

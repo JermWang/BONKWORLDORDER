@@ -71,12 +71,13 @@ const Index = () => {
     setIsArmed(true);
     setCountdown(3); // 3 second countdown
     
-    // Increment counter
-    const nextCount = await logStrike();
-    if (nextCount !== null) {
-      setGlobalStrikes(nextCount);
-      window.dispatchEvent(new CustomEvent('strikes:update', { detail: nextCount }));
-    }
+    // Increment counter immediately (non-blocking)
+    logStrike().then((nextCount) => {
+      if (nextCount !== null) {
+        setGlobalStrikes(nextCount);
+        window.dispatchEvent(new CustomEvent('strikes:update', { detail: nextCount }));
+      }
+    });
   }, [isLaunching, countdown]);
 
   return (
@@ -127,7 +128,8 @@ const Index = () => {
               className="relative z-10 w-full max-w-lg md:max-w-xl"
               style={{ 
                 imageRendering: 'auto',
-                filter: 'drop-shadow(0 0 40px rgba(0, 255, 120, 0.4)) drop-shadow(0 0 80px rgba(0, 255, 120, 0.2))'
+                filter: 'drop-shadow(0 0 40px rgba(0, 255, 120, 0.4)) drop-shadow(0 0 80px rgba(0, 255, 120, 0.2))',
+                mixBlendMode: 'normal'
               }}
             />
           </div>

@@ -57,10 +57,9 @@ export const ExplosionVideo = forwardRef<ExplosionVideoHandle, ExplosionVideoPro
                             }
                         }, 40);
                     }, fadeStart);
+                    // Play BWO.wav stinger slightly before GIF ends for smoother transition
+                    const stingerDelay = Math.max(0, durationMs - 400);
                     window.setTimeout(() => {
-                        setIsPlaying(false);
-                        isPlayingRef.current = false;
-                        // Play post stinger if provided
                         try {
                             if (postAudioSrc) {
                                 const st = postAudioRef.current || new Audio(postAudioSrc);
@@ -70,6 +69,11 @@ export const ExplosionVideo = forwardRef<ExplosionVideoHandle, ExplosionVideoPro
                                 st.play().catch(() => {});
                             }
                         } catch {}
+                    }, stingerDelay);
+                    
+                    window.setTimeout(() => {
+                        setIsPlaying(false);
+                        isPlayingRef.current = false;
                         onComplete?.();
                         window.clearTimeout(fadeId);
                     }, durationMs);
