@@ -1,19 +1,28 @@
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Copy, Check } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 interface CopyContractButtonProps {
   contractAddress?: string;
+  className?: string;
 }
 
 export const CopyContractButton = ({ 
-  contractAddress = "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb" 
+  contractAddress = "",
+  className,
 }: CopyContractButtonProps) => {
   const [copied, setCopied] = useState(false);
+  const hasAddress = typeof contractAddress === 'string' && contractAddress.startsWith('0x') && contractAddress.length >= 10;
+  const preview = hasAddress ? `${contractAddress.slice(0, 6)}...${contractAddress.slice(-4)}` : "coming soon";
 
   const handleCopy = async () => {
     try {
+      if (!hasAddress) {
+        toast.message("Contract address coming soon");
+        return;
+      }
       await navigator.clipboard.writeText(contractAddress);
       setCopied(true);
       toast.success("Contract address copied!");
@@ -26,7 +35,10 @@ export const CopyContractButton = ({
   return (
     <Button
       onClick={handleCopy}
-      className="glass-panel glow-border px-8 py-6 text-lg font-bold transition-all duration-300 hover:scale-105 bg-primary/10 hover:bg-primary/20 text-foreground border-2"
+      className={cn(
+        "glass-panel glow-border px-8 py-6 text-lg font-bold transition-all duration-300 hover:scale-105 bg-primary/10 hover:bg-primary/20 text-foreground border-2",
+        className,
+      )}
     >
       {copied ? (
         <>
@@ -36,7 +48,7 @@ export const CopyContractButton = ({
       ) : (
         <>
           <Copy className="mr-2 h-5 w-5" />
-          Copy Contract
+          {preview}
         </>
       )}
     </Button>

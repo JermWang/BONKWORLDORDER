@@ -22,15 +22,15 @@ export const ParticleBackground = () => {
       opacity: number;
     }> = [];
 
-    // Create particles
-    for (let i = 0; i < 50; i++) {
+    // Create particles (slightly increased density)
+    for (let i = 0; i < 100; i++) {
       particles.push({
         x: Math.random() * canvas.width,
         y: Math.random() * canvas.height,
-        size: Math.random() * 2 + 1,
+        size: Math.random() * 2.5 + 1,
         speedY: Math.random() * -1 - 0.5,
-        speedX: Math.random() * 0.5 - 0.25,
-        opacity: Math.random() * 0.5 + 0.2,
+        speedX: Math.random() * 0.6 - 0.3,
+        opacity: Math.random() * 0.5 + 0.25,
       });
     }
 
@@ -41,8 +41,8 @@ export const ParticleBackground = () => {
         // Draw glowing particle
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
-        ctx.shadowBlur = 30;
-        ctx.shadowColor = 'rgba(0, 255, 120, 0.6)';
+        ctx.shadowBlur = 50;
+        ctx.shadowColor = 'rgba(0, 255, 120, 0.75)';
         ctx.fillStyle = `rgba(0, 255, 120, ${particle.opacity})`;
         ctx.beginPath();
         ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
@@ -80,8 +80,8 @@ export const ParticleBackground = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 pointer-events-none z-[8000]"
-      style={{ zIndex: 8000, mixBlendMode: 'screen' }}
+      className="fixed inset-0 pointer-events-none z-[2]"
+      style={{ mixBlendMode: 'screen' }}
     />
   );
 };

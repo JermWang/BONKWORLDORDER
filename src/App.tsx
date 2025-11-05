@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import SiteOverlay from "@/components/SiteOverlay";
+import BackgroundAudio from "@/components/BackgroundAudio";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -22,6 +23,7 @@ const App = () => (
         </Routes>
       </BrowserRouter>
       <SiteOverlay />
+      <BackgroundAudio />
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -1,17 +1,48 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Upload, Download, Sparkles } from "lucide-react";
+import { Upload, Download, Sparkles, Layers } from "lucide-react";
 import { toast } from "sonner";
 
 export const PFPGenerator = () => {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [opacity, setOpacity] = useState([80]);
+  const [overlayImage, setOverlayImage] = useState<string | null>(null);
+  const [opacity, setOpacity] = useState([0]);
   const [tint, setTint] = useState([0]);
   const [blur, setBlur] = useState([0]);
   const [scale, setScale] = useState([100]);
+  const [imageOffset, setImageOffset] = useState({ x: 0, y: 0 });
+  const [overlayScale, setOverlayScale] = useState([100]);
+  const [overlayOffset, setOverlayOffset] = useState({ x: 0, y: 0 });
+  const [activeLayer, setActiveLayer] = useState<'photo' | 'overlay'>('photo');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const overlayInputRef = useRef<HTMLInputElement>(null);
+  const dragRef = useRef<{ dragging: boolean; lastX: number; lastY: number }>({ dragging: false, lastX: 0, lastY: 0 });
+  const [assetUrls, setAssetUrls] = useState<string[]>([]);
+
+  useEffect(() => {
+    const defaults = [
+      "Bonk World Order.png",
+      "BWO nwo.png",
+      "bwo-glow-green.png",
+      "button-pressed.png",
+      "button-unpressed.png",
+    ];
+    fetch('/assets/manifest.json')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        const list: string[] = (j?.items ?? defaults)
+          .map((it: any) => (typeof it === 'string' ? it : it?.file))
+          .filter((s: any) => typeof s === 'string');
+        const urls = list.map((name) => `/assets/${encodeURIComponent(name)}`);
+        setAssetUrls(urls);
+      })
+      .catch(() => {
+        const urls = defaults.map((name) => `/assets/${encodeURIComponent(name)}`);
+        setAssetUrls(urls);
+      });
+  }, []);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -20,6 +51,19 @@ export const PFPGenerator = () => {
       reader.onload = (event) => {
         setUploadedImage(event.target?.result as string);
         toast.success("Image uploaded!");
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleOverlayUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setOverlayImage(event.target?.result as string);
+        setActiveLayer('overlay');
+        toast.success("Overlay added!");
       };
       reader.readAsDataURL(file);
     }
@@ -34,60 +78,126 @@ export const PFPGenerator = () => {
 
     const img = new Image();
     img.onload = () => {
-      canvas.width = 500;
-      canvas.height = 500;
+      const size = Math.min(800, Math.floor(window.innerWidth * 0.85));
+      canvas.width = size;
+      canvas.height = size;
 
       // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Apply scale
+      // Apply scale & position
       const scaleValue = scale[0] / 100;
       const scaledWidth = canvas.width * scaleValue;
       const scaledHeight = canvas.height * scaleValue;
-      const offsetX = (canvas.width - scaledWidth) / 2;
-      const offsetY = (canvas.height - scaledHeight) / 2;
+      const offsetX = (canvas.width - scaledWidth) / 2 + imageOffset.x;
+      const offsetY = (canvas.height - scaledHeight) / 2 + imageOffset.y;
 
       // Apply blur
       ctx.filter = `blur(${blur[0]}px)`;
 
-      // Draw image
+      // Draw main image
       ctx.drawImage(img, offsetX, offsetY, scaledWidth, scaledHeight);
 
-      // Apply tint overlay
-      ctx.filter = "none";
-      ctx.globalAlpha = opacity[0] / 100;
-      ctx.fillStyle = `hsl(${tint[0]}, 100%, 50%)`;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // Tint (only if opacity > 0)
+      if ((opacity[0] ?? 0) > 0) {
+        ctx.filter = "none";
+        ctx.globalAlpha = opacity[0] / 100;
+        ctx.fillStyle = `hsl(${tint[0]}, 100%, 50%)`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
 
-      // Add cyber border effect
+      // Overlay image
+      if (overlayImage) {
+        const ov = new Image();
+        ov.onload = () => {
+          const ovScale = overlayScale[0] / 100;
+          const ovW = canvas.width * ovScale;
+          const ovH = canvas.height * ovScale;
+          const ovX = (canvas.width - ovW) / 2 + overlayOffset.x;
+          const ovY = (canvas.height - ovH) / 2 + overlayOffset.y;
+          ctx.globalAlpha = 1;
+          ctx.drawImage(ov, ovX, ovY, ovW, ovH);
+          // highlight border
+          ctx.strokeStyle = "rgba(16,185,129,0.4)";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(ovX, ovY, ovW, ovH);
+        };
+        ov.src = overlayImage;
+      }
+
+      // Cyber border
       ctx.globalAlpha = 1;
       ctx.strokeStyle = "hsl(180, 100%, 50%)";
       ctx.lineWidth = 3;
       ctx.strokeRect(0, 0, canvas.width, canvas.height);
     };
     img.src = uploadedImage;
-  }, [uploadedImage, opacity, tint, blur, scale]);
+  }, [uploadedImage, opacity, tint, blur, scale, imageOffset, overlayImage, overlayScale, overlayOffset]);
 
   const handleDownload = () => {
     if (!canvasRef.current) return;
     
     const link = document.createElement("a");
-    link.download = "cyber-pfp.png";
+    // Generate sequential 4-digit agent number stored per browser
+    const prev = parseInt(localStorage.getItem('bwo:agentCounter') || '0', 10) || 0;
+    const next = (prev + 1) % 10000;
+    localStorage.setItem('bwo:agentCounter', String(next));
+    const idStr = String(next).padStart(4, '0');
+    link.download = `BWO_AGENT_#${idStr}.png`;
     link.href = canvasRef.current.toDataURL();
     link.click();
     toast.success("PFP downloaded!");
   };
 
+  const onCanvasPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    dragRef.current.dragging = true;
+    dragRef.current.lastX = e.clientX;
+    dragRef.current.lastY = e.clientY;
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+  const onCanvasPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!dragRef.current.dragging) return;
+    const dx = e.clientX - dragRef.current.lastX;
+    const dy = e.clientY - dragRef.current.lastY;
+    dragRef.current.lastX = e.clientX;
+    dragRef.current.lastY = e.clientY;
+    if (activeLayer === 'photo') {
+      setImageOffset((p) => ({ x: p.x + dx, y: p.y + dy }));
+    } else {
+      setOverlayOffset((p) => ({ x: p.x + dx, y: p.y + dy }));
+    }
+  };
+  const onCanvasPointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    dragRef.current.dragging = false;
+    (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+  };
+
+  const onDropFile = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setUploadedImage(event.target?.result as string);
+      setImageOffset({ x: 0, y: 0 });
+      toast.success("Image added");
+    };
+    reader.readAsDataURL(file);
+  };
+  const onDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
+
   return (
-    <div className="glass-panel rounded-2xl p-8 w-full max-w-2xl">
+    <div className="w-full" onDrop={onDropFile} onDragOver={onDragOver}>
+      <div className="glass-panel rounded-xl p-4 md:p-6 w-full">
       <div className="flex items-center gap-3 mb-6">
         <Sparkles className="h-6 w-6 text-primary" />
         <h2 className="text-2xl font-bold glow-text">PFP Generator</h2>
       </div>
 
-      <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_360px] gap-4">
         {/* Upload Section */}
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-3">
           <input
             ref={fileInputRef}
             type="file"
@@ -95,24 +205,49 @@ export const PFPGenerator = () => {
             onChange={handleImageUpload}
             className="hidden"
           />
+          <input
+            ref={overlayInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleOverlayUpload}
+            className="hidden"
+          />
           
           {!uploadedImage ? (
-            <Button
+            <div
+              className="w-full max-w-[720px] aspect-square rounded-xl border border-emerald-500/30 bg-neutral-900/70 flex items-center justify-center text-emerald-200/90 cursor-pointer hover:bg-neutral-900/80 transition"
               onClick={() => fileInputRef.current?.click()}
-              className="glass-panel glow-border w-full py-8 bg-muted/20 hover:bg-muted/30 transition-all duration-300"
             >
-              <Upload className="mr-2 h-5 w-5" />
-              Upload Your Image
-            </Button>
+              <div className="flex flex-col items-center gap-2">
+                <Upload className="h-6 w-6" />
+                <span className="text-sm">Drag & drop or click to upload</span>
+                <span className="text-[10px] opacity-70">PNG/JPG/WebP • up to ~10MB</span>
+              </div>
+            </div>
           ) : (
             <canvas
               ref={canvasRef}
-              className="w-full max-w-md aspect-square rounded-xl glow-border"
+              className="w-full max-w-[720px] aspect-square rounded-xl glow-border cursor-move"
+              onPointerDown={onCanvasPointerDown}
+              onPointerMove={onCanvasPointerMove}
+              onPointerUp={onCanvasPointerUp}
             />
           )}
         </div>
 
         {/* Controls */}
+        <div className="space-y-4">
+          {!uploadedImage ? (
+            <div className="text-sm text-emerald-300/80">
+              <p className="mb-2">How to use:</p>
+              <ol className="list-decimal list-inside space-y-1 opacity-90">
+                <li>Drop or click to upload your photo.</li>
+                <li>Drag to position the image; use Scale/Blur/Tint for styling.</li>
+                <li>Optional: Add Overlay, then drag/scale it.</li>
+                <li>Click Export to download a square PNG.</li>
+              </ol>
+            </div>
+          ) : null}
         {uploadedImage && (
           <div className="space-y-4">
             <div className="space-y-2">
@@ -162,13 +297,30 @@ export const PFPGenerator = () => {
                 value={scale}
                 onValueChange={setScale}
                 min={50}
-                max={150}
+                max={200}
                 step={1}
                 className="w-full"
               />
             </div>
 
-            <div className="flex gap-3 pt-4">
+            <div className="flex items-center gap-2 pt-2">
+              <Button variant="outline" className="flex-1" onClick={() => overlayInputRef.current?.click()}>
+                <Layers className="mr-2 h-4 w-4" /> Add Overlay
+              </Button>
+              <Button variant="outline" className="flex-1" onClick={() => setActiveLayer(activeLayer === 'photo' ? 'overlay' : 'photo')}>
+                Editing: {activeLayer === 'photo' ? 'Photo' : 'Overlay'}
+              </Button>
+            </div>
+            {overlayImage && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Overlay Scale: {overlayScale[0]}%
+                </label>
+                <Slider value={overlayScale} onValueChange={setOverlayScale} min={10} max={200} step={1} />
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-2">
               <Button
                 onClick={() => fileInputRef.current?.click()}
                 variant="outline"
@@ -182,11 +334,38 @@ export const PFPGenerator = () => {
                 className="flex-1 bg-primary/20 hover:bg-primary/30 glow-border"
               >
                 <Download className="mr-2 h-4 w-4" />
-                Download PFP
+                Export PNG
               </Button>
             </div>
           </div>
         )}
+        </div>
+
+        {/* Asset panel */}
+        <div className="space-y-4">
+          <div className="text-sm font-medium text-emerald-300/80">Assets</div>
+          {assetUrls.length > 0 ? (
+            <div className="grid grid-cols-3 gap-2 max-h-[560px] overflow-auto pr-2">
+              {assetUrls.map((url) => (
+                <button
+                  key={url}
+                  type="button"
+                  className="group relative aspect-square rounded-md overflow-hidden border border-emerald-500/30 hover:border-emerald-500/60 bg-neutral-900/60"
+                  onClick={() => { setOverlayImage(url); setActiveLayer('overlay'); }}
+                >
+                  <img src={url} alt="asset" className="w-full h-full object-contain" />
+                  <span className="absolute bottom-0 left-0 right-0 text-[10px] text-emerald-300/80 bg-black/40 opacity-0 group-hover:opacity-100 transition">Use</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="text-xs text-emerald-300/70">
+              Place overlay files in <code className="text-emerald-200">public/assets</code> and (optionally) add a manifest:
+              <pre className="mt-2 p-2 bg-black/40 rounded text-[10px] overflow-auto">{`/assets/manifest.json\n{ "items": [ "overlay1.png", "overlay2.png" ] }`}</pre>
+            </div>
+          )}
+        </div>
+      </div>
       </div>
     </div>
   );
