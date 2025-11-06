@@ -656,7 +656,8 @@ export const PFPGenerator = () => {
   return (
     <div className="w-full" onDrop={onDropFile} onDragOver={onDragOver}>
       <div className="glass-panel rounded-xl p-0 w-full">
-      <div className="flex items-center gap-3 mb-2 px-3 pt-3">
+      <div className="mx-auto w-full max-w-[1100px]">
+      <div className="flex items-center justify-center gap-3 mb-2 px-3 pt-3 text-center">
         <Sparkles className="h-6 w-6 text-primary" />
         <h2 className="text-2xl font-bold glow-text">PFP Generator</h2>
       </div>
@@ -787,6 +788,7 @@ export const PFPGenerator = () => {
             )}
           </div>
         </div>
+      </div>
       </div>
       </div>
     </div>
