@@ -115,14 +115,14 @@ export const NukeHUD: React.FC<NukeHUDProps> = ({
 			{/* Side panels - Telemetry */}
 			{countdown !== null && (
 				<>
-                    <div className="hidden md:block absolute left-4 top-1/2 -translate-y-1/2 bg-black/70 backdrop-blur-sm border border-emerald-600/40 p-3 font-mono text-xs text-emerald-300 space-y-1">
+					<div className="hidden md:block absolute left-4 top-1/3 -translate-y-1/2 bg-black/70 backdrop-blur-sm border border-emerald-600/40 p-3 font-mono text-xs text-emerald-300 space-y-1">
 						<div>TARGET: GLOBAL</div>
 						<div>YIELD: 50MT</div>
 						<div>STATUS: HOT</div>
 						<div className="text-emerald-400">AUTH: CONFIRMED</div>
 					</div>
 
-                    <div className="hidden md:block absolute right-4 top-1/2 -translate-y-1/2 bg-black/70 backdrop-blur-sm border border-emerald-600/40 p-3 font-mono text-xs text-emerald-300 space-y-1">
+					<div className="hidden md:block absolute right-4 top-1/3 -translate-y-1/2 bg-black/70 backdrop-blur-sm border border-emerald-600/40 p-3 font-mono text-xs text-emerald-300 space-y-1">
 						<div>SYS: NOMINAL</div>
 						<div>FUEL: 100%</div>
 						<div>GUID: LOCKED</div>
