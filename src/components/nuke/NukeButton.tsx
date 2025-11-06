@@ -47,8 +47,8 @@ export const NukeButton: React.FC<NukeButtonProps> = ({ onFire, disabled }) => {
         try {
             onFire?.(null);
         } finally {
-            // keep button visually pressed briefly, then release
-            setTimeout(() => setPressed(false), 250);
+            // keep button visually pressed briefly, then release (tactile feedback only)
+            setTimeout(() => setPressed(false), 160);
             // extend cooldown to cover full launch window (~3.5s)
             setTimeout(() => {
                 setCooldown(false);
@@ -70,7 +70,7 @@ export const NukeButton: React.FC<NukeButtonProps> = ({ onFire, disabled }) => {
 
 	return (
 		<button
-			aria-pressed={cooldown}
+            aria-pressed={pressed}
 			aria-label="Launch Nuke"
             onClick={handleClick}
             onPointerDown={handlePointerDown}
@@ -85,14 +85,14 @@ export const NukeButton: React.FC<NukeButtonProps> = ({ onFire, disabled }) => {
 				padding: 0,
 			}}
 		>
-			<img
-				src={pressed || cooldown ? "/assets/button-pressed.png" : "/assets/button-unpressed.png"}
+            <img
+                src={pressed ? "/assets/button-pressed.png" : "/assets/button-unpressed.png"}
 				alt=""
 				draggable={false}
 				className="w-full h-full object-contain pointer-events-none select-none"
 				style={{
-					filter: cooldown ? "brightness(0.85) saturate(0.9)" : "brightness(1)",
-					transition: "filter 0.15s ease",
+                    filter: cooldown ? "grayscale(0.1) brightness(0.95)" : "none",
+                    transition: "filter 0.12s ease",
 				}}
 			/>
 		</button>

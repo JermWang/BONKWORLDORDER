@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 
 export const ParticleBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const pausedRef = useRef(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -36,7 +37,10 @@ export const ParticleBackground = () => {
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+      if (pausedRef.current) {
+        requestAnimationFrame(animate);
+        return;
+      }
       particles.forEach((particle) => {
         // Draw glowing particle
         ctx.save();
@@ -68,13 +72,22 @@ export const ParticleBackground = () => {
 
     animate();
 
+    const pause = () => { pausedRef.current = true; };
+    const resume = () => { pausedRef.current = false; };
+    window.addEventListener('bwo:pause', pause as EventListener);
+    window.addEventListener('bwo:resume', resume as EventListener);
+
     const handleResize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
 
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('bwo:pause', pause as EventListener);
+      window.removeEventListener('bwo:resume', resume as EventListener);
+    };
   }, []);
 
   return (

@@ -41,6 +41,7 @@ const Index = () => {
     if (countdown === null) return;
     
     if (countdown === 0) {
+      // resume background motion shortly after blast
       // Trigger explosion at T-0
       explosionRef.current?.trigger();
       blastRef.current?.blast();
@@ -50,6 +51,7 @@ const Index = () => {
         setCountdown(null);
         setIsArmed(false);
         setIsLaunching(false);
+        window.dispatchEvent(new Event('bwo:resume'));
       }, 2000);
       return;
     }
@@ -70,6 +72,8 @@ const Index = () => {
     setIsLaunching(true);
     setIsArmed(true);
     setCountdown(3); // 3 second countdown
+    // Pause background motion to reduce jank during sequence
+    window.dispatchEvent(new Event('bwo:pause'));
     
     // Increment counter immediately (non-blocking)
     logStrike().then((nextCount) => {
@@ -99,7 +103,7 @@ const Index = () => {
       <ExplosionVideo ref={explosionRef} videoSrc="/explosion.gif" audioSrc="/sounds/C4 Explosion FX.wav" postAudioSrc="/sounds/BWO.wav" durationMs={3200} />
 
       {/* X/Twitter Button - Top Right */}
-      <div className="fixed top-4 right-4 z-[9100]">
+      <div className="fixed top-6 right-6 md:top-20 md:right-20 z-[9100]">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button asChild variant="ghost" size="icon" className="text-green-500 hover:text-green-400 glass-panel">

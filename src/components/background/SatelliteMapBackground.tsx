@@ -6,6 +6,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 export const SatelliteMapBackground = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MLMap | null>(null);
+  const panIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -62,20 +63,37 @@ export const SatelliteMapBackground = () => {
 
     // Continuous slow pan to create a live-feed feel (low CPU via interval)
     const stepPx: [number, number] = [0.6, 0.12];
-    const panInterval = window.setInterval(() => {
-      try {
-        map.panBy(stepPx, { duration: 0 });
-        const c = map.getCenter();
-        const z = map.getZoom();
-        const b = map.getBearing();
-        const p = map.getPitch();
-        window.dispatchEvent(new CustomEvent("satellite:coords", { detail: { lat: c.lat, lng: c.lng, zoom: z, bearing: b, pitch: p } }));
-      } catch {}
-    }, 120);
+    const startPan = () => {
+      if (panIdRef.current != null) return;
+      panIdRef.current = window.setInterval(() => {
+        try {
+          map.panBy(stepPx, { duration: 0 });
+          const c = map.getCenter();
+          const z = map.getZoom();
+          const b = map.getBearing();
+          const p = map.getPitch();
+          window.dispatchEvent(new CustomEvent("satellite:coords", { detail: { lat: c.lat, lng: c.lng, zoom: z, bearing: b, pitch: p } }));
+        } catch {}
+      }, 120) as unknown as number;
+    };
+    const stopPan = () => {
+      if (panIdRef.current != null) {
+        window.clearInterval(panIdRef.current as number);
+        panIdRef.current = null;
+      }
+    };
+    startPan();
+
+    const pause = () => stopPan();
+    const resume = () => startPan();
+    window.addEventListener("bwo:pause", pause as EventListener);
+    window.addEventListener("bwo:resume", resume as EventListener);
 
     return () => {
       window.removeEventListener("resize", onResize);
-      window.clearInterval(panInterval);
+      stopPan();
+      window.removeEventListener("bwo:pause", pause as EventListener);
+      window.removeEventListener("bwo:resume", resume as EventListener);
       try { map.remove(); } catch {}
       mapRef.current = null;
     };
