@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useState } from "react";
 import { isMuted } from "@/lib/mute";
+import Sound from "@/lib/sound";
 
 type NukeButtonProps = {
 	onFire?: (nextGlobalCount: number | null) => void;
@@ -32,6 +33,14 @@ export const NukeButton: React.FC<NukeButtonProps> = ({ onFire, disabled }) => {
     const busyRef = useRef(false);
     const clickSrc = "/sounds/click-tap-computer-mouse.mp3";
     const pressTimerRef = useRef<number | null>(null);
+    const pressStartRef = useRef<number>(0);
+    const MIN_HOLD_MS = 140; // ensure visible depressed state
+
+    // Preload button assets to avoid first-click flicker
+    React.useEffect(() => {
+        const a = new Image(); a.src = "/assets/button-pressed.png";
+        const b = new Image(); b.src = "/assets/button-unpressed.png";
+    }, []);
 
     const playClick = useCallback(() => {
         try {
@@ -59,21 +68,29 @@ export const NukeButton: React.FC<NukeButtonProps> = ({ onFire, disabled }) => {
 
     const handlePointerDown = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
         if (disabled || cooldown || busyRef.current) { e.preventDefault(); return; }
+        pressStartRef.current = performance.now();
         setPressed(true);
-        playClick();
+        Sound.playClick();
+        // Fallback auto-release in case pointerup never fires
         if (pressTimerRef.current) window.clearTimeout(pressTimerRef.current);
-        pressTimerRef.current = window.setTimeout(() => setPressed(false), 220) as unknown as number;
-    }, [disabled, cooldown, playClick]);
+        pressTimerRef.current = window.setTimeout(() => setPressed(false), 360) as unknown as number;
+    }, [disabled, cooldown]);
 
     const handlePointerUp = useCallback(() => {
         if (disabled) return;
-        playClick();
+        // Ensure minimum visual hold for a satisfying click
+        const elapsed = performance.now() - (pressStartRef.current || 0);
+        const wait = Math.max(0, MIN_HOLD_MS - elapsed);
         if (pressTimerRef.current) {
             window.clearTimeout(pressTimerRef.current);
             pressTimerRef.current = null;
         }
-        setPressed(false);
-    }, [disabled, playClick]);
+        if (wait === 0) {
+            setPressed(false);
+        } else {
+            pressTimerRef.current = window.setTimeout(() => setPressed(false), wait) as unknown as number;
+        }
+    }, [disabled]);
 
 	return (
 		<button

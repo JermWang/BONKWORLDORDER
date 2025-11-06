@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { usePreciseCountdown } from "@/hooks/use-countdown";
 import { ParticleBackground } from "@/components/ParticleBackground";
 import { CopyContractButton } from "@/components/CopyContractButton";
 import { PFPGenerator } from "@/components/PFPGenerator";
@@ -25,10 +26,15 @@ const Index = () => {
   
   // Launch sequence state
   const [isArmed, setIsArmed] = useState(false);
-  const [countdown, setCountdown] = useState<number | null>(null);
   const [isLaunching, setIsLaunching] = useState(false);
   const [globalStrikes, setGlobalStrikes] = useState(0);
-  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const { seconds: countdown, start: startCountdown, reset: resetCountdown } = usePreciseCountdown({
+    onComplete: () => {
+      // Trigger blast visuals and SFX exactly once at T-0
+      explosionRef.current?.trigger();
+      blastRef.current?.blast();
+    },
+  });
 
   // Load initial global strikes and subscribe to real-time updates
   useEffect(() => {
@@ -37,36 +43,7 @@ const Index = () => {
     return unsubscribe;
   }, []);
 
-  // Countdown timer
-  useEffect(() => {
-    if (countdown === null) return;
-    
-    if (countdown === 0) {
-      // resume background motion shortly after blast
-      // Trigger explosion at T-0
-      explosionRef.current?.trigger();
-      blastRef.current?.blast();
-      
-      // Reset after explosion
-      setTimeout(() => {
-        setCountdown(null);
-        setIsArmed(false);
-        setIsLaunching(false);
-        window.dispatchEvent(new Event('bwo:resume'));
-      }, 2000);
-      return;
-    }
-
-    countdownIntervalRef.current = setInterval(() => {
-      setCountdown((c) => (c !== null && c > 0 ? c - 1 : null));
-    }, 1000);
-
-    return () => {
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current);
-      }
-    };
-  }, [countdown]);
+  // Countdown handled by usePreciseCountdown
 
   const handleNukeLaunch = useCallback(async () => {
     if (isLaunching || countdown !== null) return;
@@ -77,7 +54,7 @@ const Index = () => {
     // Small delay to let the button click finish before sequence starts
     setTimeout(() => {
       setIsArmed(true);
-      setCountdown(3); // 3 second countdown
+      startCountdown(3);
       // Increment counter immediately (non-blocking)
       logStrike().then((nextCount) => {
         if (nextCount !== null) {
@@ -86,7 +63,7 @@ const Index = () => {
         }
       });
     }, 200);
-  }, [isLaunching, countdown]);
+  }, [isLaunching, countdown, startCountdown]);
 
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden" style={{ backgroundColor: 'rgb(0, 0, 0)' }}>
@@ -104,7 +81,20 @@ const Index = () => {
           // Explosion will be triggered automatically at T-0
         }}
       />
-      <ExplosionVideo ref={explosionRef} videoSrc="/explosion.gif" audioSrc="/sounds/C4 Explosion FX.wav" postAudioSrc="/sounds/BWO.wav" durationMs={3200} />
+      <ExplosionVideo 
+        ref={explosionRef} 
+        videoSrc="/explosion.gif" 
+        audioSrc="/sounds/C4 Explosion FX.wav" 
+        postAudioSrc="/sounds/BWO.wav" 
+        durationMs={3200}
+        onComplete={() => {
+          // Reset sequence state after explosion playback finishes
+          resetCountdown();
+          setIsArmed(false);
+          setIsLaunching(false);
+          window.dispatchEvent(new Event('bwo:resume'));
+        }}
+      />
 
       {/* X/Twitter Button - Top Right */}
       <div className="fixed top-6 right-6 md:top-20 md:right-20 z-[9100] flex items-center gap-2">
@@ -188,7 +178,7 @@ const Index = () => {
 
           {/* PFP Generator Modal */}
           <Dialog open={showPFPGenerator} onOpenChange={setShowPFPGenerator}>
-            <DialogContent className="max-w-[1280px] min-w-[980px] w-[96vw] max-h-[90vh] overflow-hidden p-0 bg-black/90 border-emerald-500/20">
+            <DialogContent className="w-[96vw] max-w-[96vw] md:max-w-[1280px] min-w-0 md:min-w-[980px] max-h-[90vh] overflow-hidden p-0 bg-black/90 border-emerald-500/20">
               <PFPGenerator />
             </DialogContent>
           </Dialog>

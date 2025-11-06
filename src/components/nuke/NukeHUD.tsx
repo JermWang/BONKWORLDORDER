@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { isMuted } from "@/lib/mute";
+import Sound from "@/lib/sound";
 
 type NukeHUDProps = {
 	isArmed: boolean;
@@ -19,48 +20,7 @@ export const NukeHUD: React.FC<NukeHUDProps> = ({
   // Tick sound per second: prefer external clip if present, else fallback
   function playTick(n: number) {
     if (isMuted()) return;
-    const primaryWav = `/sounds/${n}.wav`;
-    const specific = `/sounds/countdown-${n}.mp3`;
-    const fallback = "/sounds/countdown-beep.mp3";
-    const tryPlay = async (url: string) => {
-      const a = new Audio(url);
-      a.volume = 0.9;
-      await a.play();
-    };
-    (async () => {
-      try {
-        // Prefer numbered WAVs provided by user
-        await tryPlay(primaryWav);
-      } catch {
-        try {
-          // Then try numbered mp3, then generic beep
-          await tryPlay(specific);
-        } catch {
-          try {
-            await tryPlay(fallback);
-          } catch {
-            // final synthetic fallback
-            try {
-              const AudioCtx = (window as any).AudioContext || (window as any).webkitAudioContext;
-              const ctx = new AudioCtx();
-              const o = ctx.createOscillator();
-              const g = ctx.createGain();
-              o.type = "triangle";
-              const base = 540;
-              o.frequency.value = base + (3 - Math.max(0, n)) * 80;
-              g.gain.value = 0.0001;
-              o.connect(g); g.connect(ctx.destination);
-              o.start();
-              const now = ctx.currentTime;
-              g.gain.exponentialRampToValueAtTime(0.09, now + 0.02);
-              o.frequency.exponentialRampToValueAtTime(o.frequency.value * 0.85, now + 0.12);
-              g.gain.exponentialRampToValueAtTime(0.00001, now + 0.16);
-              o.stop(now + 0.18);
-            } catch {}
-          }
-        }
-      }
-    })();
+    Sound.playTick(n);
   }
 
 	useEffect(() => {
@@ -119,10 +79,10 @@ export const NukeHUD: React.FC<NukeHUDProps> = ({
 				<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
 					<div className="relative flex items-center justify-center">
 						<span className="absolute inset-0 countdown-grain" aria-hidden />
-						<div
+                        <div
 							className="font-mono font-bold leading-none select-none"
 							style={{
-								fontSize: "12rem",
+                                fontSize: "min(12rem, 44vw)",
 								color: "#39FF14",
 								textShadow: "0 0 30px rgba(57,255,20,1), 0 0 80px rgba(57,255,20,0.7), 0 0 140px rgba(57,255,20,0.5)",
 								letterSpacing: "0.1em",
@@ -155,14 +115,14 @@ export const NukeHUD: React.FC<NukeHUDProps> = ({
 			{/* Side panels - Telemetry */}
 			{countdown !== null && (
 				<>
-					<div className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/70 backdrop-blur-sm border border-emerald-600/40 p-3 font-mono text-xs text-emerald-300 space-y-1">
+                    <div className="hidden md:block absolute left-4 top-1/2 -translate-y-1/2 bg-black/70 backdrop-blur-sm border border-emerald-600/40 p-3 font-mono text-xs text-emerald-300 space-y-1">
 						<div>TARGET: GLOBAL</div>
 						<div>YIELD: 50MT</div>
 						<div>STATUS: HOT</div>
 						<div className="text-emerald-400">AUTH: CONFIRMED</div>
 					</div>
 
-					<div className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/70 backdrop-blur-sm border border-emerald-600/40 p-3 font-mono text-xs text-emerald-300 space-y-1">
+                    <div className="hidden md:block absolute right-4 top-1/2 -translate-y-1/2 bg-black/70 backdrop-blur-sm border border-emerald-600/40 p-3 font-mono text-xs text-emerald-300 space-y-1">
 						<div>SYS: NOMINAL</div>
 						<div>FUEL: 100%</div>
 						<div>GUID: LOCKED</div>

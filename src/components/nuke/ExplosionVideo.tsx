@@ -1,4 +1,5 @@
 import React, { forwardRef, useImperativeHandle, useRef, useState } from "react";
+import Sound from "@/lib/sound";
 import { isMuted } from "@/lib/mute";
 
 export type ExplosionVideoHandle = {
@@ -27,50 +28,40 @@ export const ExplosionVideo = forwardRef<ExplosionVideoHandle, ExplosionVideoPro
                 const isGif = videoSrc.toLowerCase().endsWith(".gif");
                 setIsPlaying(true);
                 isPlayingRef.current = true;
-                // Play explosion audio
-                try {
-                    const el = audioRef.current;
-                    if (el) {
-                        el.currentTime = 0;
-                        el.volume = 0.5; // lower volume
-                        el.muted = isMuted();
-                        el.play().catch(() => {});
-                    } else if (audioSrc) {
-                        const a = new Audio(audioSrc);
-                        a.volume = 0.5; // lower volume
-                        a.muted = isMuted();
-                        a.play().catch(() => {});
-                    }
-                } catch {}
+                // Play explosion audio via Sound manager
+                const expPromise = Sound.playExplosion();
                 if (isGif) {
-                    // Auto-hide after duration for GIFs
-                    // fade out audio in the last 600ms
-                    const fadeStart = Math.max(0, durationMs - 600);
+                    // Auto-hide slightly BEFORE 1st loop completes to avoid showing the start of a 2nd loop
+                    const effectiveDuration = Math.max(0, durationMs - 120);
+                    // fade out audio in the last 600ms (gradual ramp)
+                    const fadeStart = Math.max(0, effectiveDuration - 600);
+                    let fadeInterval: number | null = null;
                     const fadeId = window.setTimeout(() => {
-                        const el = audioRef.current;
-                        if (!el) return;
-                        let vol = el.volume ?? 1;
-                        const step = vol / 12;
-                        const i = window.setInterval(() => {
-                            vol = Math.max(0, vol - step);
-                            el.volume = vol;
-                            if (vol <= 0.02) {
-                                el.pause();
-                                window.clearInterval(i);
-                            }
-                        }, 40);
+                        expPromise
+                            .then((handle) => {
+                                if (!handle) return;
+                                const steps = 12;
+                                const stepMs = Math.max(20, Math.floor(600 / steps));
+                                let i = 0;
+                                fadeInterval = window.setInterval(() => {
+                                    i += 1;
+                                    const vol = Math.max(0, 1 - i / steps);
+                                    try { handle.setVolume(vol); } catch {}
+                                    if (i >= steps && fadeInterval) {
+                                        window.clearInterval(fadeInterval);
+                                        fadeInterval = null;
+                                    }
+                                }, stepMs) as unknown as number;
+                            })
+                            .catch(() => {});
                     }, fadeStart);
                     // Play BWO.wav stinger slightly before GIF ends for smoother transition
-                    const stingerDelay = Math.max(0, durationMs - 400);
+                    const stingerDelay = Math.max(0, effectiveDuration - 400);
                     window.setTimeout(() => {
                         try {
                             if (postAudioSrc) {
-                                const st = postAudioRef.current || new Audio(postAudioSrc);
-                                if (!postAudioRef.current) postAudioRef.current = st as HTMLAudioElement;
-                                st.currentTime = 0;
-                                st.volume = 0.9;
-                                st.muted = isMuted();
-                                st.play().catch(() => {});
+                                // Prefer Sound manager; fallback to element if needed
+                                Sound.playStinger();
                             }
                         } catch {}
                     }, stingerDelay);
@@ -80,7 +71,8 @@ export const ExplosionVideo = forwardRef<ExplosionVideoHandle, ExplosionVideoPro
                         isPlayingRef.current = false;
                         onComplete?.();
                         window.clearTimeout(fadeId);
-                    }, durationMs);
+                        if (fadeInterval) window.clearInterval(fadeInterval);
+                    }, effectiveDuration);
                     return;
                 }
                 const vid = videoRef.current;

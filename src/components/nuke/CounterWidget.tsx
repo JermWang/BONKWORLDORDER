@@ -30,7 +30,7 @@ export const CounterWidget: React.FC = () => {
     }, []);
 
     return (
-        <div className="fixed left-20 top-1/2 -translate-y-1/2 z-[9100] select-none">
+        <div className="fixed z-[9600] select-none left-1/2 -translate-x-1/2 top-4 md:left-20 md:top-1/2 md:translate-x-0 md:-translate-y-1/2">
             <div className="rounded-xl border border-emerald-500/40 bg-black/50 backdrop-blur-md px-5 py-3 shadow-[0_0_40px_rgba(16,185,129,0.15)]">
                 <div className="flex items-center gap-3">
                     <div>
