@@ -1,4 +1,5 @@
 import React, { useCallback, useRef, useState } from "react";
+import { isMuted } from "@/lib/mute";
 
 type NukeButtonProps = {
 	onFire?: (nextGlobalCount: number | null) => void;
@@ -33,6 +34,7 @@ export const NukeButton: React.FC<NukeButtonProps> = ({ onFire, disabled }) => {
 
     const playClick = useCallback(() => {
         try {
+            if (isMuted()) return;
             const a = new Audio(clickSrc);
             a.volume = 0.9;
             a.play().catch(() => {});

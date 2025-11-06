@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { isMuted } from "@/lib/mute";
 
 type NukeHUDProps = {
 	isArmed: boolean;
@@ -17,6 +18,7 @@ export const NukeHUD: React.FC<NukeHUDProps> = ({
 
   // Tick sound per second: prefer external clip if present, else fallback
   function playTick(n: number) {
+    if (isMuted()) return;
     const primaryWav = `/sounds/${n}.wav`;
     const specific = `/sounds/countdown-${n}.mp3`;
     const fallback = "/sounds/countdown-beep.mp3";

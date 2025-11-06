@@ -19,6 +19,9 @@ export const PFPGenerator = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const overlayInputRef = useRef<HTMLInputElement>(null);
   const dragRef = useRef<{ dragging: boolean; lastX: number; lastY: number }>({ dragging: false, lastX: 0, lastY: 0 });
+  const pendingImageOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const pendingOverlayOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const rafScheduledRef = useRef(false);
   const [assetUrls, setAssetUrls] = useState<string[]>([]);
 
   useEffect(() => {
@@ -78,7 +81,9 @@ export const PFPGenerator = () => {
 
     const img = new Image();
     img.onload = () => {
-      const size = Math.min(800, Math.floor(window.innerWidth * 0.85));
+      const maxByHeight = Math.floor(window.innerHeight * 0.62);
+      const maxByWidth = Math.floor(window.innerWidth * 0.48);
+      const size = Math.max(360, Math.min(720, maxByHeight, maxByWidth));
       canvas.width = size;
       canvas.height = size;
 
@@ -154,6 +159,9 @@ export const PFPGenerator = () => {
     dragRef.current.lastX = e.clientX;
     dragRef.current.lastY = e.clientY;
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    // seed pending refs to current state for smooth updates
+    pendingImageOffsetRef.current = { ...imageOffset } as any;
+    pendingOverlayOffsetRef.current = { ...overlayOffset } as any;
   };
   const onCanvasPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!dragRef.current.dragging) return;
@@ -161,15 +169,40 @@ export const PFPGenerator = () => {
     const dy = e.clientY - dragRef.current.lastY;
     dragRef.current.lastX = e.clientX;
     dragRef.current.lastY = e.clientY;
+
     if (activeLayer === 'photo') {
-      setImageOffset((p) => ({ x: p.x + dx, y: p.y + dy }));
+      const next = pendingImageOffsetRef.current;
+      next.x += dx; next.y += dy;
     } else {
-      setOverlayOffset((p) => ({ x: p.x + dx, y: p.y + dy }));
+      const next = pendingOverlayOffsetRef.current;
+      next.x += dx; next.y += dy;
+    }
+
+    if (!rafScheduledRef.current) {
+      rafScheduledRef.current = true;
+      requestAnimationFrame(() => {
+        rafScheduledRef.current = false;
+        if (activeLayer === 'photo') {
+          setImageOffset({ ...pendingImageOffsetRef.current });
+        } else {
+          setOverlayOffset({ ...pendingOverlayOffsetRef.current });
+        }
+      });
     }
   };
   const onCanvasPointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
     dragRef.current.dragging = false;
     (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+  };
+
+  const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+  const onCanvasWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
+    // smooth zoom for overlay only
+    if (activeLayer !== 'overlay') return;
+    e.preventDefault();
+    const delta = -e.deltaY; // wheel up => zoom in
+    const step = delta > 0 ? 2 : -2;
+    setOverlayScale((s) => [clamp(s[0] + step, 10, 200)]);
   };
 
   const onDropFile = (e: React.DragEvent<HTMLDivElement>) => {
@@ -227,10 +260,11 @@ export const PFPGenerator = () => {
           ) : (
             <canvas
               ref={canvasRef}
-              className="w-full max-w-[720px] aspect-square rounded-xl glow-border cursor-move"
+              className="w-full max-w-[720px] aspect-square rounded-xl glow-border cursor-move max-h-[62vh]"
               onPointerDown={onCanvasPointerDown}
               onPointerMove={onCanvasPointerMove}
               onPointerUp={onCanvasPointerUp}
+              onWheel={onCanvasWheel}
             />
           )}
         </div>
@@ -345,8 +379,8 @@ export const PFPGenerator = () => {
         <div className="space-y-4">
           <div className="text-sm font-medium text-emerald-300/80">Assets</div>
           {assetUrls.length > 0 ? (
-            <div className="grid grid-cols-3 gap-2 max-h-[560px] overflow-auto pr-2">
-              {assetUrls.map((url) => (
+            <div className="grid grid-cols-3 gap-2 pr-1">
+              {assetUrls.slice(0,6).map((url) => (
                 <button
                   key={url}
                   type="button"

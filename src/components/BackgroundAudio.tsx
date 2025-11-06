@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { isMuted, onMuteChange } from "@/lib/mute";
 
 export const BackgroundAudio = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -9,6 +10,7 @@ export const BackgroundAudio = () => {
     audio.loop = true;
     audio.volume = 0.35;
     audioRef.current = audio;
+    audio.muted = isMuted();
 
     const start = async () => {
       if (startedRef.current) return;
@@ -25,10 +27,15 @@ export const BackgroundAudio = () => {
     window.addEventListener("pointerdown", start, { once: true });
     window.addEventListener("keydown", start, { once: true });
 
+    const off = onMuteChange((muted) => {
+      if (audioRef.current) audioRef.current.muted = muted;
+    });
+
     return () => {
       try { audio.pause(); } catch {}
       window.removeEventListener("pointerdown", start as any);
       window.removeEventListener("keydown", start as any);
+      off();
     };
   }, []);
 

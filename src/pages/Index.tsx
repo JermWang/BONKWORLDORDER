@@ -14,6 +14,7 @@ import BlastFX, { BlastFXHandle } from "@/components/nuke/BlastFX";
 import CounterWidget from "@/components/nuke/CounterWidget";
 import { NukeHUD } from "@/components/nuke/NukeHUD";
 import ExplosionVideo, { ExplosionVideoHandle } from "@/components/nuke/ExplosionVideo";
+import MuteButton from "@/components/MuteButton";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { getGlobalStrikes, logStrike, subscribeToStrikes } from "@/lib/supabase";
 
@@ -70,18 +71,21 @@ const Index = () => {
   const handleNukeLaunch = useCallback(async () => {
     if (isLaunching || countdown !== null) return;
     setIsLaunching(true);
-    setIsArmed(true);
-    setCountdown(3); // 3 second countdown
     // Pause background motion to reduce jank during sequence
     window.dispatchEvent(new Event('bwo:pause'));
-    
-    // Increment counter immediately (non-blocking)
-    logStrike().then((nextCount) => {
-      if (nextCount !== null) {
-        setGlobalStrikes(nextCount);
-        window.dispatchEvent(new CustomEvent('strikes:update', { detail: nextCount }));
-      }
-    });
+
+    // Small delay to let the button click finish before sequence starts
+    setTimeout(() => {
+      setIsArmed(true);
+      setCountdown(3); // 3 second countdown
+      // Increment counter immediately (non-blocking)
+      logStrike().then((nextCount) => {
+        if (nextCount !== null) {
+          setGlobalStrikes(nextCount);
+          window.dispatchEvent(new CustomEvent('strikes:update', { detail: nextCount }));
+        }
+      });
+    }, 200);
   }, [isLaunching, countdown]);
 
   return (
@@ -103,7 +107,7 @@ const Index = () => {
       <ExplosionVideo ref={explosionRef} videoSrc="/explosion.gif" audioSrc="/sounds/C4 Explosion FX.wav" postAudioSrc="/sounds/BWO.wav" durationMs={3200} />
 
       {/* X/Twitter Button - Top Right */}
-      <div className="fixed top-6 right-6 md:top-20 md:right-20 z-[9100]">
+      <div className="fixed top-6 right-6 md:top-20 md:right-20 z-[9100] flex items-center gap-2">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button asChild variant="ghost" size="icon" className="text-green-500 hover:text-green-400 glass-panel">
@@ -119,21 +123,32 @@ const Index = () => {
           </TooltipTrigger>
           <TooltipContent>Follow on X</TooltipContent>
         </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div>
+              <MuteButton />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>Toggle sound</TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Main Content */}
       <div className="relative z-10 w-full max-w-6xl mx-auto px-4 py-6">
         <div className="flex flex-col items-center gap-3">
           {/* Hero Image with Glow */}
-          <div className="relative flex items-center justify-center">
+          <div className="relative flex items-center justify-center isolate">
             <img
               src="/BWO-TRANSPARENT.gif"
               alt="BWO Main Hero"
               className="relative z-10 w-full max-w-lg md:max-w-xl"
               style={{ 
                 imageRendering: 'auto',
-                filter: 'drop-shadow(0 0 40px rgba(0, 255, 120, 0.4)) drop-shadow(0 0 80px rgba(0, 255, 120, 0.2))',
-                mixBlendMode: 'normal'
+                filter: 'drop-shadow(0 0 28px rgba(0, 255, 120, 0.35)) drop-shadow(0 0 56px rgba(0, 255, 120, 0.18))',
+                mixBlendMode: 'normal',
+                backfaceVisibility: 'hidden',
+                transform: 'translateZ(0)',
+                willChange: 'transform'
               }}
             />
           </div>
@@ -173,7 +188,7 @@ const Index = () => {
 
           {/* PFP Generator Modal */}
           <Dialog open={showPFPGenerator} onOpenChange={setShowPFPGenerator}>
-            <DialogContent className="max-w-[1200px] w-[96vw] max-h-[85vh] overflow-auto p-0 bg-black/90 border-emerald-500/20">
+            <DialogContent className="max-w-[1280px] w-[96vw] max-h-[90vh] overflow-hidden p-0 bg-black/90 border-emerald-500/20">
               <PFPGenerator />
             </DialogContent>
           </Dialog>

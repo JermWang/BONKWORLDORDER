@@ -1,4 +1,5 @@
 import React, { forwardRef, useImperativeHandle, useRef, useState } from "react";
+import { isMuted } from "@/lib/mute";
 
 export type ExplosionVideoHandle = {
     trigger: () => void;
@@ -32,10 +33,12 @@ export const ExplosionVideo = forwardRef<ExplosionVideoHandle, ExplosionVideoPro
                     if (el) {
                         el.currentTime = 0;
                         el.volume = 0.5; // lower volume
+                        el.muted = isMuted();
                         el.play().catch(() => {});
                     } else if (audioSrc) {
                         const a = new Audio(audioSrc);
                         a.volume = 0.5; // lower volume
+                        a.muted = isMuted();
                         a.play().catch(() => {});
                     }
                 } catch {}
@@ -66,6 +69,7 @@ export const ExplosionVideo = forwardRef<ExplosionVideoHandle, ExplosionVideoPro
                                 if (!postAudioRef.current) postAudioRef.current = st as HTMLAudioElement;
                                 st.currentTime = 0;
                                 st.volume = 0.9;
+                                st.muted = isMuted();
                                 st.play().catch(() => {});
                             }
                         } catch {}

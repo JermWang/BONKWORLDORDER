@@ -15,7 +15,15 @@ export const SatelliteHUD = () => {
   const format = (n: number) => n.toFixed(4);
 
   return (
-    <div className="fixed inset-0 z-[5] pointer-events-none mix-blend-screen">
+    <div
+      className="fixed inset-0 z-[5] pointer-events-none mix-blend-screen"
+      style={{
+        WebkitMaskImage: 'radial-gradient(circle 9rem at 12% 50%, transparent 99%, #000 100%)',
+        maskImage: 'radial-gradient(circle 9rem at 12% 50%, transparent 99%, #000 100%)',
+        WebkitMaskComposite: 'source-over',
+        maskComposite: 'add'
+      }}
+    >
       {/* Frame corners */}
       <div className="absolute top-6 left-6 h-10 w-10 border-t-2 border-l-2 border-emerald-400/60" />
       <div className="absolute top-6 right-6 h-10 w-10 border-t-2 border-r-2 border-emerald-400/60" />

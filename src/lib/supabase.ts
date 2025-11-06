@@ -16,6 +16,13 @@ function isSupabaseConfigured() {
     );
 }
 
+// Ensure the singleton row exists so increments don't return NULL
+export async function ensureGlobalStrikesRow() {
+    try {
+        await supabase.from('global_strikes').upsert({ id: 1, count: 0 }).select();
+    } catch {}
+}
+
 // Real-time strike counter hook
 export async function getGlobalStrikes(): Promise<number> {
     if (!isSupabaseConfigured()) {
@@ -24,6 +31,8 @@ export async function getGlobalStrikes(): Promise<number> {
         return typeof val === "number" ? val : 0;
     }
     try {
+        // Ensure row exists
+        await ensureGlobalStrikesRow();
         const { data, error } = await supabase
             .from("global_strikes")
             .select("count")
@@ -42,6 +51,7 @@ export async function incrementGlobalStrikes(): Promise<number | null> {
         return typeof val === "number" ? val : null;
     }
     try {
+        await ensureGlobalStrikesRow();
         const { data, error } = await supabase.rpc("increment_strikes");
         if (error) throw error;
         return data ?? null;
@@ -57,6 +67,7 @@ export async function logStrike(): Promise<number | null> {
         return incrementGlobalStrikes();
     }
     try {
+        await ensureGlobalStrikesRow();
         const payload: any = {
             session_id: (crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)),
             user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,

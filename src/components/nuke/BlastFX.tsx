@@ -35,12 +35,12 @@ export const BlastFX = forwardRef<BlastFXHandle>(function BlastFX(_, ref) {
 
 		const render = (ts: number) => {
 			if (!running) return;
-			const t = (ts - start) / 1000; // seconds
+            const t = Math.max(0, (ts - start) / 1000); // seconds, clamp non-negative
 			ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
 
 			// 0..1 normalized
 			const dur = 1.6;
-			const p = Math.min(1, t / dur);
+            const p = Math.max(0, Math.min(1, t / dur));
 
 			// Center
 			const cx = canvas.clientWidth / 2;

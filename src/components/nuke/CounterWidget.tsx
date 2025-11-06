@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { getGlobalStrikes, subscribeToStrikes } from "@/lib/supabase";
-import { XLogo } from "@/components/icons/XLogo";
 
 export const CounterWidget: React.FC = () => {
     const [globalCount, setGlobalCount] = useState<number | null>(null);
@@ -38,15 +37,6 @@ export const CounterWidget: React.FC = () => {
                         <div className="text-[10px] uppercase tracking-[0.2em] text-emerald-300/80">Global Strikes</div>
                         <div className="text-3xl font-extrabold text-emerald-200 leading-tight">{displayGlobal}</div>
                     </div>
-                    <a
-                        href="https://x.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="X (Twitter)"
-                        className="ml-1 text-emerald-300/80 hover:text-emerald-200"
-                    >
-                        <XLogo className="h-4 w-4" />
-                    </a>
                 </div>
             </div>
         </div>
