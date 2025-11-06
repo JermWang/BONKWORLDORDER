@@ -188,7 +188,7 @@ const Index = () => {
 
           {/* PFP Generator Modal */}
           <Dialog open={showPFPGenerator} onOpenChange={setShowPFPGenerator}>
-            <DialogContent className="max-w-[1280px] w-[96vw] max-h-[90vh] overflow-hidden p-0 bg-black/90 border-emerald-500/20">
+            <DialogContent className="max-w-[1280px] min-w-[980px] w-[96vw] max-h-[90vh] overflow-hidden p-0 bg-black/90 border-emerald-500/20">
               <PFPGenerator />
             </DialogContent>
           </Dialog>
