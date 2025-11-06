@@ -31,6 +31,7 @@ export const NukeButton: React.FC<NukeButtonProps> = ({ onFire, disabled }) => {
     const [pressed, setPressed] = useState(false);
     const busyRef = useRef(false);
     const clickSrc = "/sounds/click-tap-computer-mouse.mp3";
+    const pressTimerRef = useRef<number | null>(null);
 
     const playClick = useCallback(() => {
         try {
@@ -44,30 +45,34 @@ export const NukeButton: React.FC<NukeButtonProps> = ({ onFire, disabled }) => {
     const handleClick = useCallback(async () => {
         if (disabled || cooldown || busyRef.current) return;
         busyRef.current = true;
-        if (!pressed) setPressed(true);
         setCooldown(true);
         try {
             onFire?.(null);
         } finally {
-            // keep button visually pressed briefly, then release (tactile feedback only)
-            setTimeout(() => setPressed(false), 160);
             // extend cooldown to cover full launch window (~3.5s)
             setTimeout(() => {
                 setCooldown(false);
                 busyRef.current = false;
             }, 3600);
         }
-    }, [disabled, cooldown, onFire, pressed]);
+    }, [disabled, cooldown, onFire]);
 
     const handlePointerDown = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
         if (disabled || cooldown || busyRef.current) { e.preventDefault(); return; }
         setPressed(true);
         playClick();
+        if (pressTimerRef.current) window.clearTimeout(pressTimerRef.current);
+        pressTimerRef.current = window.setTimeout(() => setPressed(false), 220) as unknown as number;
     }, [disabled, cooldown, playClick]);
 
     const handlePointerUp = useCallback(() => {
         if (disabled) return;
         playClick();
+        if (pressTimerRef.current) {
+            window.clearTimeout(pressTimerRef.current);
+            pressTimerRef.current = null;
+        }
+        setPressed(false);
     }, [disabled, playClick]);
 
 	return (
@@ -78,7 +83,7 @@ export const NukeButton: React.FC<NukeButtonProps> = ({ onFire, disabled }) => {
             onPointerDown={handlePointerDown}
             onPointerUp={handlePointerUp}
 			disabled={disabled || cooldown}
-			className="relative inline-flex items-center justify-center select-none transition-transform hover:scale-105 active:scale-98 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500 disabled:opacity-70"
+            className="relative inline-flex items-center justify-center select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500 disabled:opacity-70"
 			style={{
 				width: "120px",
 				height: "120px",
@@ -94,7 +99,8 @@ export const NukeButton: React.FC<NukeButtonProps> = ({ onFire, disabled }) => {
 				className="w-full h-full object-contain pointer-events-none select-none"
 				style={{
                     filter: cooldown ? "grayscale(0.1) brightness(0.95)" : "none",
-                    transition: "filter 0.12s ease",
+                    transform: pressed ? "scale(0.97)" : "scale(1)",
+                    transition: "transform 120ms ease, filter 120ms ease",
 				}}
 			/>
 		</button>
