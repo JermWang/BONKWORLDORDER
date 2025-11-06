@@ -681,7 +681,7 @@ export const PFPGenerator = () => {
           
           {!uploadedImage ? (
             <div
-              className="w-full max-w-[720px] aspect-square rounded-xl border border-emerald-500/30 bg-neutral-900/70 flex items-center justify-center text-emerald-200/90 cursor-pointer hover:bg-neutral-900/80 transition"
+              className="w-full lg:w-[720px] max-w-[720px] aspect-square rounded-xl border border-emerald-500/30 bg-neutral-900/70 flex items-center justify-center text-emerald-200/90 cursor-pointer hover:bg-neutral-900/80 transition"
               onClick={() => fileInputRef.current?.click()}
             >
               <div className="flex flex-col items-center gap-2">
@@ -693,7 +693,7 @@ export const PFPGenerator = () => {
           ) : (
             <canvas
               ref={canvasRef}
-              className="w-full max-w-[720px] aspect-square rounded-xl max-h-[58vh]"
+              className="w-full lg:w-[720px] max-w-[720px] aspect-square rounded-xl max-h-[58vh]"
               onPointerDown={onCanvasPointerDown}
               onPointerMove={onCanvasPointerMove}
               onPointerUp={onCanvasPointerUp}
