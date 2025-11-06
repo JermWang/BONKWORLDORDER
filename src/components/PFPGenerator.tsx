@@ -661,7 +661,7 @@ export const PFPGenerator = () => {
         <h2 className="text-2xl font-bold glow-text">PFP Generator</h2>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)] gap-2 md:gap-3 px-3 pb-3">
+      <div className="grid grid-cols-1 lg:grid-cols-[720px_360px] gap-2 md:gap-3 px-3 pb-3">
         {/* Upload Section */}
         <div className="flex flex-col items-center gap-3">
           <input
